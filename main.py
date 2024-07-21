@@ -8,11 +8,15 @@ from canvasapi.file import File
 from canvasapi.module import Module, ModuleItem
 from pathvalidate import sanitize_filename
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import chromadb
 import demo
 
 API_URL = "https://arlington.instructure.com"
-API_KEY = os.environ["CANVAS_API"]
+API_KEY = os.environ["CANVAS_API_KEY"]
 
 
 # Initialize a new Canvas object

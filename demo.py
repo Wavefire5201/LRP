@@ -1,6 +1,16 @@
 from langchain_community.vectorstores import chroma
-from langchain_community.llms import Ollama
+from langchain_community.llms.ollama import Ollama
+
+# from langchain_community.llms.anthropic import Anthropic
+# from langchain_anthropic import AnthropicLLM
+from langchain_anthropic import ChatAnthropic
 from langchain_community.embeddings import OllamaEmbeddings
+from langchain_openai import OpenAIEmbeddings
+
+
+from langchain.chains.combine_documents import create_stuff_documents_chain
+
+# from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.document_loaders import (
     PyPDFLoader,
     UnstructuredPowerPointLoader,
@@ -9,12 +19,18 @@ from langchain_community.document_loaders import (
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os, chromadb
+from dotenv import load_dotenv
 
-embeddings = OllamaEmbeddings(model="mxbai-embed-large:latest")
+load_dotenv()
+
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+# embeddings = OllamaEmbeddings(model="mxbai-embed-large:latest")
+embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", api_key=OPENAI_API_KEY)
 
 
 def demo(course, resume, reindex):
@@ -99,25 +115,34 @@ def demo(course, resume, reindex):
             continue
 
         # Prompt
-        template = """Use the following pieces of context to answer the question at the end. 
+        template = """You are a helpful assistant who has context to a specific course in
+        the Learning Management System called Canvas. 
+        Use the following pieces of context to answer the question at the end. 
         If you don't know the answer, just say that you don't know, don't try to make up an answer. 
-        Use three sentences maximum and keep the answer as concise as possible. 
+        Make sure to keep the answer concise and easy to understand, only further expanding when requested to by the user. 
         {context}
-        Question: {question}
+        Question: {input}
         Helpful Answer:"""
         QA_CHAIN_PROMPT = PromptTemplate(
-            input_variables=["context", "question"],
+            input_variables=["input", "context"],
             template=template,
         )
 
-        llm = Ollama(
-            model="llama2:13b",
+        # llm = Ollama(
+        #     model="llama2:13b",
+        #     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        # )
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-20240620",
+            anthropic_api_key=ANTHROPIC_API_KEY,
             callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
         )
-        qa_chain = RetrievalQA.from_chain_type(
-            llm,
-            retriever=vectorstore.as_retriever(),
-            chain_type_kwargs={"prompt": QA_CHAIN_PROMPT},
+
+        combine_docs_chain = create_stuff_documents_chain(llm, QA_CHAIN_PROMPT)
+
+        qa_chain = create_retrieval_chain(
+            retriever=vectorstore.as_retriever(), combine_docs_chain=combine_docs_chain
         )
 
-        result = qa_chain.invoke({"query": query})
+        result = qa_chain.invoke({"input": query})
+        print(result["answer"])
