@@ -60,26 +60,32 @@ def demo(course, resume, reindex):
                 for root, dirs, files in os.walk(directory):
                     for file in files:
                         if file.endswith(".pptx"):
-                            file_path = os.path.join(root, file)
-                            loader = UnstructuredPowerPointLoader(file_path)
-                            data = loader.load()
-
+                            try:
+                                file_path = os.path.join(root, file)
+                                loader = UnstructuredPowerPointLoader(file_path)
+                                data = loader.load()
+                            except Exception as e:
+                                print(e)
                             # Add the documents to the list
                             print(f"Loaded {file_path}")
                             all_documents.extend(data)
                         elif file.endswith(".pdf"):
-                            file_path = os.path.join(root, file)
-                            loader = PyPDFLoader(file_path, extract_images=True)
-                            data = loader.load()
-
+                            try:
+                                file_path = os.path.join(root, file)
+                                loader = PyPDFLoader(file_path, extract_images=True)
+                                data = loader.load()
+                            except Exception as e:
+                                print(e)
                             # Add the documents to the list
                             print(f"Loaded {file_path}")
                             all_documents.extend(data)
                         elif file.endswith(".html"):
-                            file_path = os.path.join(root, file)
-                            loader = UnstructuredHTMLLoader(file_path)
-                            data = loader.load()
-
+                            try:
+                                file_path = os.path.join(root, file)
+                                loader = UnstructuredHTMLLoader(file_path)
+                                data = loader.load()
+                            except Exception as e:
+                                print(e)
                             # Add the documents to the list
                             print(f"Loaded {file_path}")
                             all_documents.extend(data)
@@ -90,7 +96,8 @@ def demo(course, resume, reindex):
     # Split the documents into chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
     data = text_splitter.split_documents(all_documents)
-
+    print("Collection name:")
+    print(course.name.lower().strip().replace(" ", "_"))
     if not collection_exists or reindex:
         # Update the collection
         vectorstore = chroma.Chroma.from_documents(

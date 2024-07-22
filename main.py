@@ -82,8 +82,15 @@ if not collection_exists or reindex:
 
             if item_type == "File":
                 file = canvas.get_file(item.content_id)
+                dest_path = path + sanitize_filename(file.filename)
+                print(dest_path)
+                if os.path.isfile(dest_path):
+                    print("Skipping... File already exists...")
+                    pass
+
                 files_downloaded.add(item.content_id)
-                file.download(path + sanitize_filename(file.filename))
+                file.download(dest_path)
+
             elif item_type == "Page":
                 page = course.get_page(item.page_url)
                 with open(
@@ -98,8 +105,14 @@ if not collection_exists or reindex:
                         continue
                     try:
                         file = course.get_file(file_id)
+                        dest_path = path + sanitize_filename(file.filename)
+
+                        if os.path.isfile(dest_path):
+                            print("Skipping... File already exists...")
+                            pass
+
                         files_downloaded.add(file_id)
-                        file.download(path + sanitize_filename(file.filename))
+                        file.download(dest_path)
                     except ResourceDoesNotExist or Unauthorized or Forbidden:
                         pass
             elif item_type == "Assignment":
@@ -116,8 +129,14 @@ if not collection_exists or reindex:
                         continue
                     try:
                         file = course.get_file(file_id)
+                        dest_path = path + sanitize_filename(file.filename)
+
+                        if os.path.isfile(dest_path):
+                            print("Skipping... File already exists...")
+                            pass
+
                         files_downloaded.add(file_id)
-                        file.download(path + sanitize_filename(file.filename))
+                        file.download(dest_path)
                     except ResourceDoesNotExist or Unauthorized or Forbidden:
                         pass
 
